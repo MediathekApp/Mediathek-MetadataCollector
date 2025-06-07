@@ -1,0 +1,5 @@
+{
+    "cachingServer":        "Hostname of the caching server",
+    "recommendationServer": "Hostname of the recommendation server",
+    "serperDevAPIKey":      "API key for serper.dev, used for search queries"
+}
