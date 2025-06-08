@@ -41,6 +41,22 @@ export default function prepareContext(globalThis) {
 
     globalThis.readContentsOfURLAsString = readContentsOfURLAsString;
 
+    let tokens = {};
+
+    globalThis.saveToken = (name, token) => {
+        if (typeof name !== 'string' || !name) {
+            throw new Error("Token name must be a non-empty string");
+        }
+        if (typeof token !== 'string' || !token) {
+            throw new Error("Token must be a non-empty string");
+        }
+        tokens[name] = token;
+    }
+
+    globalThis.getToken = (name) => {
+        return tokens[name];
+    }
+
 }
 
 export function runTest(asyncTestFunction) {

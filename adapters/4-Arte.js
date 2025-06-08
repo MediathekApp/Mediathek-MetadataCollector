@@ -2,7 +2,6 @@ export const ArteTvAdapter = {
 
     publisher: 'Arte',
 
-
     /**
      * Get item by a publisher-specific ID.
      *
@@ -312,27 +311,12 @@ export const ArteTvAdapter = {
 
     internal: {
 
-        tokenName: 'api.arte.tv',
-
-        getFreshAPIToken: async function () {
-
-            // TODO
-
-        },
 
         call2019API: async function (apiURL, itemID, recursiveCall) {
 
-            var type = 'item';
+            console.log('Calling ARTE API: ' + apiURL + ' for itemID: ' + itemID);
 
-            var apiToken = getToken(ArteTvAdapter.internal.tokenName);
-            const useApiToken = false;
-
-            var response = await requestResponseFromURL(apiURL, useApiToken ? {
-                'Accept': 'application/json',
-                'Origin': 'https://www.arte.tv',
-                'Authorization': 'Bearer ' + apiToken,
-                //'Host': 'api.arte.tv',
-            } : {});
+            var response = await requestResponseFromURL(apiURL);
 
             var apiDataRaw = response.body;
             var statusCode = response.statusCode;
@@ -341,9 +325,7 @@ export const ArteTvAdapter = {
 
             if (response.statusCode == 401) {
 
-                if (recursiveCall || itemID.length == 0) throw 'We need a new API token. Server responded with: Authentication failed. Current API token = ' + apiToken + ', requested URL = ' + apiURL + ' . Automated fetch from website failed.';
-
-                ArteTvAdapter.internal.getFreshAPIToken();
+                if (recursiveCall || itemID.length == 0) throw 'Server responded with: Authentication failed.';
 
                 return await ArteTvAdapter.internal.call2019API(apiURL, itemID, true);
 

@@ -207,7 +207,7 @@ export const ZDFAdapter = {
     // Calls the ZDF API.
     // The profile 'player2' seems to be the optimized API call for the web.
     // There is also a profile 'default' with 1-2 megabyte payload.
-    call2019API: async function (apiURL, itemID, type, recursiveCall) {
+    call2019API: async function (apiURL, itemID, type, recursiveCall = false) {
 
         console.log("Calling ZDF API with URL: " + apiURL + ", itemID: " + itemID + ", type: " + type + ", recursiveCall: " + recursiveCall);
 
@@ -228,7 +228,7 @@ export const ZDFAdapter = {
                 throw 'We need a new API token. Server responded with: Authentication failed. Current API token = ' + apiToken + ', requested URL = ' + apiURL + ' . Automated fetch from website failed.';
             }
 
-            this.getFreshAPIToken();
+            await this.getFreshAPIToken();
 
             return await this.call2019API(apiURL, itemID, type, true);
         }
@@ -252,22 +252,34 @@ export const ZDFAdapter = {
 
     getFreshAPIToken: async function () {
 
+        console.log('Fetching new API token for '+this.publisher+'...');
+
         // Extract the new API token directly from the website's HTML.
 
         var webURL = this.urlToExtractAPIToken;
         var html = await requestDataFromURL(webURL);
-        var pos = html.indexOf('"apiToken":');
-        var pos2 = html.indexOf(',', pos);
 
-        if (!pos || !pos2) { throw 'Failed to obtain a new API token from website.'; }
+        let prefix = `apiToken`;
+        let suffix = `,`;
 
-        pos += '"apiToken":'.length;
+        var pos = html.indexOf(prefix);
+        var pos2 = html.indexOf(suffix, pos + prefix.length);
+
+        if (pos === -1 || pos2 === -1) {
+            throw 'Failed to obtain a new API token for ZDF.';
+        }
+
+        pos += prefix.length;
 
         var token = html.substr(pos, (pos2 - pos - 1));
-        token = token.replace('"', '');
+
+        // Remove everything that is not alphanumeric.
+        token = token.replace(/[^a-zA-Z0-9]/g, '');
         token = token.trim();
 
         saveToken(this.tokenName, token);
+
+        return token;
 
     },
 

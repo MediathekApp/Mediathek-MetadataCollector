@@ -502,23 +502,6 @@ var createImageVariant = function (url, width, height) {
 
 };
 
-function getToken(tokenName) {
-
-    // Placeholder tokens for different publishers.
-
-    switch (tokenName) {
-        case 'api.arte.tv':
-            return 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJzc28vNTA2N2RlYmM0ZmJkNTNhYzk1OTE1MTRmNTEwMzBiODI2YWFhYWNkOSIsImF1ZCI6WyJodHRwOi8vYXJ0ZS1ydnAxLnNkdi5mci8iLCJodHRwOi8vYXJ0ZS1ydnAyLnNkdi5mci8iLCJodHRwOi8vYXJ0ZS1ydnAzLnNkdi5mci8iLCJodHRwOi8vYXJ0ZS1ydnA0LnNkdi5mci8iXSwiaWF0IjoxNzQ4NTI0MzQ4Ljc5MDU3MiwibmJmIjoxNzQ4NTI0MzQ4Ljc5MDU3OCwic3ViIjoiMDI4MDFjY2QtODlmMi00OTI1LTllYzctODExMDgxMWUwNmU5IiwidWlkIjoiMDI4MDFjY2QtODlmMi00OTI1LTllYzctODExMDgxMWUwNmU5IiwiY2xpZW50Ijoid2ViIiwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbIlJPTEVfQVBJX0FOT05ZTU9VUyJdfSwiYW5vbnltb3VzIjp0cnVlfQ.KCZ95nw32S8ljyyCtxCVOuGjAhorxezIlKVUDSfQUSbcUGH-mogv1wdDSapGMCjiam7WyphVcHNSD9cvqM00aoiQMN2dx--I-8R7RuXymzDeHvh7mXDm-bGkbvqlfiNPtgNmUwMBK2jxZIb3HkaoUMES63BB48xgXszN8xMi8F8';
-        case 'api.zdf.de':
-            return 'ahBaeMeekaiy5ohsai4bee4ki6Oopoi5quailieb';
-        case 'api.3sat.de':
-            return '13e717ac1ff5c811c72844cebd11fc59ecb8bc03';
-    }
-
-    throw new Error('No token available for ' + tokenName + '.');
-
-}
-
 // Helper function to extract a substring from a source string.
 function getSubstring(source, prefix, suffix, offset) {
 
