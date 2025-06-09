@@ -1,3 +1,5 @@
+import { requestResponseFromURL, requestDataFromURL, createImageVariant } from "../shared.js";
+
 export default function prepareContext(globalThis) {
 
     /**
@@ -40,6 +42,8 @@ export default function prepareContext(globalThis) {
     }
 
     globalThis.readContentsOfURLAsString = readContentsOfURLAsString;
+    globalThis.requestDataFromURL = requestDataFromURL;
+    globalThis.createImageVariant = createImageVariant;
 
     let tokens = {};
 
@@ -56,6 +60,8 @@ export default function prepareContext(globalThis) {
     globalThis.getToken = (name) => {
         return tokens[name];
     }
+
+    globalThis.requestResponseFromURL = requestResponseFromURL;
 
 }
 

@@ -1,5 +1,5 @@
 export const ZDFAdapter = {
-    
+
     // Example identifiers:
     // - itemID: heute-journal-vom-4-dezember-2019-100
     // - programID: heute-journal-104, terra-x-112
@@ -60,7 +60,7 @@ export const ZDFAdapter = {
         item.program = {};
         item.program.id = apiData['http://zdf.de/rels/brand']?.['http://zdf.de/rels/target']?.id ?? '';
         item.program.name = apiData['http://zdf.de/rels/brand']?.title ?? '';
-        this.optimizeProgram(item.program);       
+        this.optimizeProgram(item.program);
 
         if (item.title.indexOf('(AD)') !== -1 || item.title.indexOf('Hörfassung') !== -1) {
             item.includesAudioDescription = true;
@@ -252,32 +252,53 @@ export const ZDFAdapter = {
 
     getFreshAPIToken: async function () {
 
-        console.log('Fetching new API token for '+this.publisher+'...');
+        console.log('Fetching new API token for ' + this.publisher + '...');
 
         // Extract the new API token directly from the website's HTML.
 
-        var webURL = this.urlToExtractAPIToken;
-        var html = await requestDataFromURL(webURL);
+        let webURL = this.urlToExtractAPIToken;
+        let html = await requestDataFromURL(webURL);
 
         let prefix = `apiToken`;
         let suffix = `,`;
 
-        var pos = html.indexOf(prefix);
-        var pos2 = html.indexOf(suffix, pos + prefix.length);
+        let startPos = 0;
+        let foundTokens = [];
 
-        if (pos === -1 || pos2 === -1) {
+        do {
+            var pos = html.indexOf(prefix, startPos);
+            var pos2 = html.indexOf(suffix, pos + prefix.length);
+
+            if (pos === -1 || pos2 === -1) {
+                break;
+            }
+
+            pos += prefix.length;
+
+            let token = html.substr(pos, (pos2 - pos - 1));
+            startPos = pos2 + suffix.length;
+
+            // Remove everything that is not alphanumeric.
+            token = token.replace(/[^a-zA-Z0-9]/g, '');
+            token = token.trim();
+            if (token.length < 10) {
+                console.warn('ZDFAdapter.getFreshAPIToken: Found token is too short: ' + token);
+                continue;
+            }
+            foundTokens.push(token);
+        } while (pos !== -1 && pos2 !== -1);
+
+        if (foundTokens.length == 0) {
             throw 'Failed to obtain a new API token for ZDF.';
         }
 
-        pos += prefix.length;
+        console.log('Found ' + foundTokens.length + ' API tokens in HTML: ' + foundTokens.join(', '));
 
-        var token = html.substr(pos, (pos2 - pos - 1));
-
-        // Remove everything that is not alphanumeric.
-        token = token.replace(/[^a-zA-Z0-9]/g, '');
-        token = token.trim();
+        let token = foundTokens[0];
 
         saveToken(this.tokenName, token);
+
+        console.log('New API token for ' + this.publisher + ': ' + token);
 
         return token;
 
@@ -520,6 +541,47 @@ export const ZDFAdapter = {
         }
 
         return programs;
+
+    },
+
+    /**
+     * Get metadata of a program
+     *
+     * @param ID The ID of the program
+     * @return object The program
+     */
+    readProgram: async function (id) {
+
+        var apiURL = 'https://' + this.apiURLHost + '/content/documents/' + id + '.json?profile=navigation';
+        var apiData = await this.call2019API(apiURL, id, 'item');
+
+        if (!apiData || !apiData.structureNodePath) {
+            throw 'Unexpected response from server: ' + JSON.stringify(apiData);
+        }
+
+        const program = {};
+        program.id = id;
+        program.publisher = this.publisher;
+        program.name = apiData.title;
+
+        const teaserData = apiData.stage?.[0]?.teaser?.[0]?.['http://zdf.de/rels/target'];
+        if (teaserData) {
+            if (teaserData.layouts) {
+                let image = [];
+                for (var key in teaserData.layouts) {
+                    var value = teaserData.layouts[key];
+                    if (key == 'original') continue;
+                    var size = key.split('x');
+                    // Skip 1200x1200 for now, it is not cropped properly.
+                    if (size[0] == '1200' && size[1] == '1200') continue;
+                    image.push(createImageVariant(value, size[0], size[1]));
+                }
+                program.image = image;
+            }
+
+        }
+
+        return program;
 
     },
 

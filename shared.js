@@ -54,7 +54,7 @@ function getUrnForUrlAsValue(url) {
         // Item – example: https://www.ardmediathek.de/video/moneyland-die-dunklen-geschaefte-der-finanzindustrie/moneyland/arte/Y3JpZDovL2FydGUudHYvcHVibGljYXRpb24vMTAxOTE4LTAwMC1B
 
         if (pathParts[1] == 'video' || pathParts[1] == 'player') {
-        
+
             let itemId = '';
 
             // expected path: /video/SENDUNG/FOLGE/SENDER/ID
@@ -142,13 +142,13 @@ function getUrnForUrlAsValue(url) {
             }
 
             return 'urn:mediathek:zdf:item:' + video_id;
-        
+
         }
 
         // Programs – example:
         // - https://www.zdf.de/magazine/heute-journal-104
 
-        if (parts.length == 5 && !['nachrichten','assets','live-tv','3sat'].includes(parts[3])) {
+        if (parts.length == 5 && !['nachrichten', 'assets', 'live-tv', '3sat'].includes(parts[3])) {
             return 'urn:mediathek:zdf:program:' + parts[4];
         }
 
@@ -229,120 +229,81 @@ function getUrnForUrlAsValue(url) {
 
 }
 
-async function getMetadataForItem(callback, urn, asJSON = true) {
+function parseURN(urn) {
 
-    console.log("getMetadataForItem called with URN:", urn);
+    // Example: urn:mediathek:ard:item:ITEM_ID
 
-    // Parse the URN to extract the provider and item ID
     const urnParts = urn.split(':');
 
-    if (urnParts.length != 5 || urnParts[0] !== 'urn' || urnParts[1] !== 'mediathek') {
-        callback('Invalid URN format: ' + urn, null);
-        return;
+    if (urnParts.length < 5 || urnParts[0] !== 'urn' || urnParts[1] !== 'mediathek') {
+        throw new Error('Invalid URN format: ' + urn);
     }
 
-    if (urnParts[3] !== 'item') {
-        callback('URN does not refer to an item: ' + urn, null);
-        return;
-    }
+    const publisher = urnParts[2];
+    const type = urnParts[3];
+    const id = urnParts[4];
 
-    const provider = urnParts[2];
-    const itemId = urnParts[4];
-
-    // ARD
-    if (provider == 'ard') {
-
-        try {
-            const item = await ARDMediathekAdapter.readItemByID(itemId);
-            item.captured = Math.floor(Date.now() / 1000);
-            item.urn = urn; // Add the URN to the item object
-            //console.log("Response from ARD Mediathek:", JSON.stringify(item));
-            callback(null, asJSON ? JSON.stringify(item) : item);
-            return;
-
-        } catch (error) {
-            const line = error.lineNumber || 'unknown';
-            console.error("Error fetching data from ARD Mediathek:", error + ' at line ' + line);
-            callback(error, null);
-            return;
-        }
-
-    }
-
-    // ARTE
-    if (provider == 'arte') {
-
-        try {
-            const item = await ArteTvAdapter.readItemByID(itemId);
-            item.captured = Math.floor(Date.now() / 1000);
-            item.urn = urn; // Add the URN to the item object
-            //console.log("Response from ARTE API:", JSON.stringify(item));
-            callback(null, asJSON ? JSON.stringify(item) : item);
-            return;
-
-        } catch (error) {
-            console.error("Error fetching data from ARTE:", error);
-            callback(error, null);
-            return;
-        }
-
-    }
-
-    // ZDF
-    if (provider == 'zdf') {
-
-        try {
-            const item = await ZDFAdapter.readItemByID(itemId);
-            item.captured = Math.floor(Date.now() / 1000);
-            item.urn = urn; // Add the URN to the item object
-            //console.log("Response from ZDF API:", JSON.stringify(item));
-            callback(null, asJSON ? JSON.stringify(item) : item);
-            return;
-
-        } catch (error) {
-            console.error("Error fetching data from ZDF:", error);
-            callback(error, null);
-            return;
-        }
-    }
-
-    // SRF
-    if (provider == 'srf') {
-
-        try {
-            const item = await SRFAdapter.readItemByID(itemId);
-            item.captured = Math.floor(Date.now() / 1000);
-            item.urn = urn; // Add the URN to the item object
-            //console.log("Response from SRF API:", JSON.stringify(item));
-            callback(null, asJSON ? JSON.stringify(item) : item);
-            return;
-        } catch (error) {
-            console.error("Error fetching data from SRF:", error);
-            callback(error, null);
-            return;
-        }
-    }
-
-    // 3sat
-    if (provider == '3sat') {
-
-        try {
-            const item = await DreiSatAdapter.readItemByID(itemId);
-            item.captured = Math.floor(Date.now() / 1000);
-            item.urn = urn; // Add the URN to the item object
-            //console.log("Response from 3sat API:", JSON.stringify(item));
-            callback(null, asJSON ? JSON.stringify(item) : item);
-            return;
-        } catch (error) {
-            console.error("Error fetching data from 3sat:", error);
-            callback(error, null);
-            return;
-        }
-    }
-
-    callback('Unsupported URI: ' + urn, null);
+    return { publisher, type, id };
 
 }
+
+function parseUrnAndGetAdapter(urn, forType) {
+
+    try {
+        const urnInfo = parseURN(urn);
+        if (!urnInfo || !urnInfo.publisher || !urnInfo.type || !urnInfo.id) {
+            throw new Error('Invalid URN structure: ' + urn);
+        }
+        if (forType !== undefined && urnInfo.type !== forType) {
+            throw new Error('URN type mismatch: expected ' + forType + ', got ' + urnInfo.type);
+        }
+        const adapter = getPublisherAdapterById(urnInfo.publisher);
+        if (!adapter) {
+            throw new Error('Publisher not supported: ' + urnInfo.publisher);
+        }
+        return { urnInfo, adapter };
+    } catch (error) {
+        throw new Error('Error validating adapter for URN: ' + urn + ' - ' + error.message);
+    }
+
+}
+
+async function getMetadataForItem(callback, urn, asJSON = true) {
+
+    try {
+        const { urnInfo, adapter } = parseUrnAndGetAdapter(urn, 'item');
+        const item = await adapter.readItemByID(urnInfo.id);
+        item.captured = Math.floor(Date.now() / 1000);
+        item.urn = urn;
+        callback(null, asJSON ? JSON.stringify(item) : item);
+
+    } catch (error) {
+        callback(error, null);
+        return;
+    }
+
+}
+
+async function getMetadataForProgram(callback, urn, asJSON = true) {
+    console.log("getMetadataForProgram called with URN:", urn);
+
+    try {
+        const { urnInfo, adapter } = parseUrnAndGetAdapter(urn, 'program');
+        const program = await adapter.readProgram(urnInfo.id);
+        program.captured = Math.floor(Date.now() / 1000);
+        program.urn = urn;
+        callback(null, asJSON ? JSON.stringify(program) : program);
+
+    } catch (error) {
+        const line = error.lineNumber || error.line || 'unknown';
+        const stack = error.stack || 'No stack trace available';
+        console.error(`Error in getMetadataForProgram at line ${line}:`, error.message, stack);
+        callback(error, null);
+        return;
+    }
+
+}
+
 
 async function getProgramFeed(callback, urn) {
     try {
@@ -386,7 +347,7 @@ async function getProgramFeed(callback, urn) {
 }
 
 // Helper function that reads contents of a URL as a string:
-function requestResponseFromURL(url, headers = {}) {
+export function requestResponseFromURL(url, headers = {}) {
 
     return new Promise((resolve, reject) => {
 
@@ -398,7 +359,7 @@ function requestResponseFromURL(url, headers = {}) {
 }
 
 // Helper function that only return the body of the response:
-async function requestDataFromURL(url, headers = {}) {
+export async function requestDataFromURL(url, headers = {}) {
     const response = await requestResponseFromURL(url, headers);
     return response.body;
 }
@@ -490,7 +451,7 @@ function parseURL(url) {
 }
 
 // Create an image variant object from a URL and optional width and height:
-var createImageVariant = function (url, width, height) {
+export function createImageVariant(url, width, height) {
 
     var variant = {};
     variant.url = url;
@@ -500,7 +461,7 @@ var createImageVariant = function (url, width, height) {
         variant.height = height * 1;
     return variant;
 
-};
+}
 
 // Helper function to extract a substring from a source string.
 function getSubstring(source, prefix, suffix, offset) {

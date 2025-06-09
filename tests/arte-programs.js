@@ -1,5 +1,5 @@
 import { runTest } from "./context.js";
-import { ArteTvAdapter } from "../bundle-test.js";
+import { ArteTvAdapter } from "../adapters/4-Arte.js";
 import fs from "fs";
 
 runTest(async () => {

@@ -1,5 +1,5 @@
 import { runTest } from "./context.js";
-import { ARDMediathekAdapter } from "../bundle-test.js";
+import { ARDMediathekAdapter } from "../adapters/1-ARDMediathek.js";
 
 runTest(async () => {
     // const item = await ARDMediathekAdapter.readItemByID("Y3JpZDovL25kci5kZS82NGFmYWUwNi1kMWYzLTRkOGEtOTQzYi0wZDkzODRjOWQ3MGRfZ2FuemVTZW5kdW5n");

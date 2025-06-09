@@ -174,6 +174,61 @@ export const ArteTvAdapter = {
     },
 
     /**
+     * Get metadata of a program
+     *
+     * @param ID The ID of the program
+     * @return object The program
+     */
+    readProgram: async function (id) {
+
+        // Determine the language code (de or fr)
+        var language;
+        {
+            var split = id.split('_');
+            if (split.length == 2) {
+                id = split[0];
+                language = split[1];
+            }
+            else {
+                language = 'de';
+            }
+        }
+
+        var url = 'https://www.arte.tv/hbbtvv2/services/web/index.php/EMAC/teasers/collection/v2/' + id + '/' + language;
+
+        var response = await requestResponseFromURL(url);
+        if (response.statusCode != 200) {
+            throw 'Unexpected status code when reading ARTE program: ' + response.statusCode;
+        }
+
+        var apiData;
+        try { apiData = JSON.parse(response.body); } catch { apiData = null; }
+        if (!apiData || !apiData.meta) {
+            throw 'Unexpected response when reading ARTE program: ' + response.body;
+        }
+
+        const program = {};
+        program.id = id;
+        program.publisher = this.publisher;
+        program.language = language;
+        program.name = apiData.meta.title;
+        program.subtitle = apiData.meta.subtitle || '';
+        program.description = apiData.meta.fullDescription || apiData.meta.shortDescription || '';
+        program.homepage = 'https://www.arte.tv/' + language + '/videos/' + id + '/';
+        let imageUrl = apiData.meta.imageUrl;
+        if (imageUrl?.includes('400x225')) {
+            imageUrl = imageUrl.replace('http://', 'https://');
+            program.image = [
+                { url: imageUrl, width: 400, height: 225 },
+                { url: imageUrl.replace('400x225', '400x400'), width: 400, height: 400 }
+            ];
+        }
+
+        return program;
+
+    },
+
+    /**
      * Get a program's feed
      *
      * @param {object} feedDescriptor A descriptor that contains the ID of the program
@@ -195,9 +250,6 @@ export const ArteTvAdapter = {
                 language = 'de';
             }
         }
-
-
-        //console.log('Loading feed for ARTE program ID '+id);
 
         var url = 'https://www.arte.tv/hbbtvv2/services/web/index.php/EMAC/teasers/collection/v2/' + id + '/' + language;
 

@@ -15,6 +15,7 @@ export const DreiSatAdapter = {
     readListOfPrograms: ZDFAdapter.readListOfPrograms,
     feedDescriptorForProgram: ZDFAdapter.feedDescriptorForProgram,
     readProgramFeed: ZDFAdapter.readProgramFeed,
+    readProgram: ZDFAdapter.readProgram,
 
     call2019API: ZDFAdapter.call2019API,
     getFreshAPIToken: ZDFAdapter.getFreshAPIToken,

@@ -1,5 +1,5 @@
 import { runTest } from "./context.js";
-import { ZDFAdapter } from "../bundle-test.js";
+import { ZDFAdapter } from "../adapters/2-ZDF.js";
 import fs from "fs";
 
 runTest(async () => {

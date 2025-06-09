@@ -1,34 +1,17 @@
 #!/bin/bash
 
-# See if there is a test flag, if so, set the TEST variable
-if [ "$1" == "--test" ]; then
-    TEST=true
-    else
-    TEST=false
-    fi    
 
 # Get the directory where the script is located
 SCRIPT_DIR=$(dirname "$0")
 
 # Output file:
-# if TEST is true, output will be 'bundle-test.js'
-# if TEST is false, output will be 'bundle.js'
-if [ "$TEST" = true ]; then
-  output="$SCRIPT_DIR/bundle-test.js"
-else
-  output="$SCRIPT_DIR/bundle.js"
-fi
+output="$SCRIPT_DIR/bundle.js"
 
 # Empty or create the output file
 > "$output"
 
 # Function to transform file content by removing 'export' keywords
 transform_content() {
-  # Do not modify the file if TEST is true
-  if [ "$TEST" = true ]; then
-    cat "$1"
-    return
-  fi
   sed -E 's/^[[:space:]]*export[[:space:]]+//; s/[[:space:]]+export[[:space:]]+//g' "$1"
 }
 
@@ -51,7 +34,7 @@ done
 
 # Append shared.js
 if [ -f "$SCRIPT_DIR/shared.js" ]; then
-  cat "$SCRIPT_DIR/shared.js" >> "$output"
+  transform_content "$SCRIPT_DIR/shared.js" >> "$output"
   echo -e "\n" >> "$output"
 else
   echo "Warning: shared.js not found!"

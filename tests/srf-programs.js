@@ -1,5 +1,5 @@
 import { runTest } from "./context.js";
-import { SRFAdapter } from "../bundle-test.js";
+import { SRFAdapter } from "../adapters/5-SRF.js";
 import fs from "fs";
 
 runTest(async () => {

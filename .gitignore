@@ -136,7 +136,6 @@ dist
 # Generated files
 output/
 bundle.js
-bundle-test.js
 
 # Configuration not in the repository
 config.json
