@@ -113,7 +113,22 @@ export const SRFAdapter = {
 
     },
 
+    readProgram: async function (programID) {
 
+        const url = 'https://www.srf.ch/play/v3/api/srf/production/show-detail/' + programID;
+        const response = await requestResponseFromURL(url);
+        if (response.statusCode != 200) {
+            throw 'Unexpected status code when reading SRF program: ' + response.statusCode;
+        }
+        const apiData = JSON.parse(response.body);
+        if (!apiData || !apiData.data) {
+            throw 'Unexpected response when reading SRF program: ' + response.body;
+        }
+
+        const program = SRFAdapter.programFromApiData(apiData.data);
+        return program;
+
+    },
 
     /**
      * Returns a token that contains information on how to obtain a feed for a program.
@@ -204,32 +219,44 @@ export const SRFAdapter = {
 
         var programs = [];
 
-        function createChannelImageVariant(originalUrl, width, height) {
-            return createImageVariant(`https://il.srgssr.ch/images/?imageUrl=${encodeURIComponent(originalUrl)}&format=jpg&width=${width}`, width, height);
-        }
-
         for (var obj of list.data) {
 
-            var program = {};
-            program.id = obj.id;
-            program.publisher = this.publisher;
-            program.name = obj.title;
-            program.description = obj.description || '';
-            program.descriptionShort = obj.lead;
-            program.image = [
-                createChannelImageVariant(obj.imageUrl, 240, 135),
-                createChannelImageVariant(obj.imageUrl, 320, 180),
-                createChannelImageVariant(obj.imageUrl, 480, 270),
-                createChannelImageVariant(obj.imageUrl, 720, 405),
-                createChannelImageVariant(obj.imageUrl, 960, 540),
-                createChannelImageVariant(obj.imageUrl, 1920, 1080),
-            ];
+            var program = this.programFromApiData(obj);
             programs.push(program);
 
         }
 
         return programs;
 
-    }
+    },
+
+    programFromApiData: function (obj) {
+
+        var program = {};
+        program.id = obj.id;
+        program.publisher = this.publisher;
+        program.name = obj.title;
+        program.description = obj.description || '';
+        program.descriptionShort = obj.lead || '';
+        program.image = [];
+        if (obj.imageUrl) {
+            program.image.push(SRFAdapter.createChannelImageVariant(obj.imageUrl, 240, 135));
+            program.image.push(SRFAdapter.createChannelImageVariant(obj.imageUrl, 320, 180));
+            program.image.push(SRFAdapter.createChannelImageVariant(obj.imageUrl, 480, 270));
+            program.image.push(SRFAdapter.createChannelImageVariant(obj.imageUrl, 720, 405));
+            program.image.push(SRFAdapter.createChannelImageVariant(obj.imageUrl, 960, 540));
+            program.image.push(SRFAdapter.createChannelImageVariant(obj.imageUrl, 1920, 1080));
+        }
+        if (obj.posterImageUrl) {
+            program.image.push(SRFAdapter.createChannelImageVariant(obj.posterImageUrl, 480, 720));
+        }
+        return program;
+
+    },
+
+    createChannelImageVariant: function (originalUrl, width, height) {
+        return createImageVariant(`https://il.srgssr.ch/images/?imageUrl=${encodeURIComponent(originalUrl)}&format=jpg&width=${width}`, width, height);
+    },
+
 
 };

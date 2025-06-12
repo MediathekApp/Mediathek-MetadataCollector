@@ -139,3 +139,6 @@ bundle.js
 
 # Configuration not in the repository
 config.json
+
+# Deployment files
+deploy.sh
